@@ -144,9 +144,17 @@ def save_model(pipe, metrics):
         json.dump(metrics, f, indent=2)
 
 def load_model():
-    if os.path.exists(MODEL_PATH):
-        return joblib.load(MODEL_PATH)
-    return None
+    """Safe model loader — handles version or attribute errors gracefully."""
+    if not os.path.exists(MODEL_PATH):
+        return None
+    try:
+        model = joblib.load(MODEL_PATH)
+        return model
+    except Exception as e:
+        st.warning(f"⚠️ Model load failed ({e.__class__.__name__}). The file may be incompatible or corrupted.")
+        st.info("Retraining the model is recommended — click 'Train Model' in the sidebar.")
+        return None
+
 
 def load_metrics():
     if os.path.exists(METRICS_PATH):
@@ -382,6 +390,9 @@ with tab1:
 with tab2:
     st.header("Model training, metrics & prediction")
     model_loaded = load_model()
+if model_loaded is None:
+    st.info("No model currently loaded — please train one before prediction.")
+
     metrics = load_metrics()
 
     colt1, colt2 = st.columns([2, 1])
