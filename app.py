@@ -87,7 +87,8 @@ def basic_preprocess(df):
     df = df.copy()
     # parse dates if present
     if "order date (DateOrders)" in df.columns:
-        df["order_date"] = pd.to_datetime(df["order date (DateOrders)"], errors="coerce")
+        df["order_date"] = pd.to_datetime(df["order date (DateOrders)"], format="%Y-%m-%d", errors="coerce")
+
         df["order_month"] = df["order_date"].dt.to_period("M").astype(str)
         df["order_year"] = df["order_date"].dt.year
     else:
@@ -396,8 +397,13 @@ with tab2:
                 if len(feats) < 2:
                     st.error("Not enough sensible features detected to train a model. Edit the dataset or add features.")
                 else:
-                    X = df[feats].copy()
-                    y = df["Late_delivery_risk"].astype(int)
+                    df["Late_delivery_risk"] = pd.to_numeric(df["Late_delivery_risk"], errors="coerce")
+                    df["Late_delivery_risk"] = df["Late_delivery_risk"].fillna(0).astype(int)
+
+# ✅ Proceed with training
+                    X = df.drop("Late_delivery_risk", axis=1)
+                    y = df["Late_delivery_risk"]
+
                     # simple dropna rows for training (alternatively impute)
                     # We'll allow imputation in pipeline; don't drop too much
                     pipe, numeric_cols, categorical_cols = build_pipeline(X)
